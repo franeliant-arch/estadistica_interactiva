@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estadística · Datos Simples y Agrupados</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Literata:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f3ee;
+  --bg2: #ede8e0;
+  --ink: #1a1207;
+  --ink2: #4a3f2f;
+  --ink3: #7a6e5f;
+  --orange: #d4531a;
+  --orange2: #f07040;
+  --blue: #1a4a8a;
+  --blue2: #2d6abf;
+  --green: #1a6644;
+  --green2: #2d9a65;
+  --amber: #c4860a;
+  --amber2: #f0a820;
+  --border: #c8bfb0;
+  --card: #ffffff;
+  --shadow: rgba(26,18,7,0.08);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Literata', Georgia, serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Noise texture overlay */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 1000; opacity: 0.4;
+}
+
+/* HEADER */
+header {
+  background: var(--ink);
+  color: var(--bg);
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+.header-inner {
+  max-width: 1100px; margin: 0 auto;
+  padding: 3rem 2rem 2.5rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2rem;
+  align-items: end;
+}
+.header-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--orange2);
+  margin-bottom: 0.8rem;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.header-tag::before {
+  content: '';
+  display: block; width: 24px; height: 2px;
+  background: var(--orange2);
+}
+header h1 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+header h1 span { color: var(--orange2); }
+.header-sub {
+  font-style: italic;
+  color: rgba(247,243,238,0.55);
+  font-size: 1rem;
+  margin-top: 0.8rem;
+}
+.header-decoration {
+  display: flex; flex-direction: column; gap: 4px; opacity: 0.15;
+}
+.header-decoration span {
+  display: block;
+  height: 3px; background: var(--orange2);
+  border-radius: 2px;
+}
+/* Animated bar chart decoration */
+.header-bars {
+  display: flex; align-items: flex-end; gap: 5px;
+  height: 60px; opacity: 0.2;
+}
+.header-bars span {
+  display: block; width: 8px; background: var(--orange2);
+  border-radius: 3px 3px 0 0;
+  animation: barrise 2s ease-out both;
+}
+@keyframes barrise { from { height: 0; } }
+
+/* NAVIGATION */
+nav {
+  background: var(--ink);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  position: sticky; top: 0; z-index: 100;
+}
+.nav-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: flex; overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav-inner::-webkit-scrollbar { display: none; }
+.nav-btn {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(247,243,238,0.5);
+  padding: 1rem 1.4rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+.nav-btn:hover { color: var(--bg); }
+.nav-btn.active {
+  color: var(--orange2);
+  border-bottom-color: var(--orange2);
+}
+
+/* MAIN LAYOUT */
+.container {
+  max-width: 1100px; margin: 0 auto;
+  padding: 2.5rem 1.5rem 5rem;
+}
+
+/* TAB CONTENT */
+.tab { display: none; animation: appear 0.3s ease; }
+.tab.active { display: block; }
+@keyframes appear { from { opacity: 0; transform: translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* CARDS */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2rem;
+  margin-bottom: 1.6rem;
+  box-shadow: 0 2px 12px var(--shadow);
+  position: relative;
+}
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 0;
+  width: 4px; height: 100%;
+  background: var(--orange);
+  border-radius: 4px 0 0 4px;
+}
+.card.blue::before { background: var(--blue); }
+.card.green::before { background: var(--green); }
+.card.amber::before { background: var(--amber); }
+
+.card h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--ink);
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.card p {
+  color: var(--ink2);
+  line-height: 1.8;
+  font-size: 0.97rem;
+  margin-bottom: 0.9rem;
+}
+.card p:last-child { margin-bottom: 0; }
+
+/* FORMULA BOX */
+.formula {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--orange);
+  padding: 1rem 1.4rem;
+  border-radius: 0 4px 4px 0;
+  margin: 1rem 0;
+  color: var(--ink);
+  line-height: 1.7;
+}
+.formula.blue { border-left-color: var(--blue); }
+.formula.green { border-left-color: var(--green); }
+.formula.amber { border-left-color: var(--amber); }
+
+/* GRID */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; }
+@media (max-width: 700px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+/* CONCEPT CARDS */
+.concept {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1.4rem;
+  transition: box-shadow 0.2s;
+}
+.concept:hover { box-shadow: 0 4px 16px var(--shadow); }
+.concept h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+.concept p { font-size: 0.88rem; color: var(--ink2); line-height: 1.65; }
+.concept .formula { font-size: 0.85rem; padding: 0.6rem 0.9rem; margin: 0.5rem 0 0; }
+
+.hl { color: var(--orange); font-weight: 600; }
+.hl-blue { color: var(--blue); font-weight: 600; }
+.hl-green { color: var(--green); font-weight: 600; }
+.hl-amber { color: var(--amber); font-weight: 600; }
+
+/* TABLES */
+.tbl-wrap { overflow-x: auto; margin: 1rem 0; }
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+thead { background: var(--ink); color: var(--bg); }
+th {
+  padding: 0.75rem 1rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  font-weight: 600;
+}
+td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--ink2);
+}
+tr:nth-child(even) td { background: var(--bg); }
+tr:last-child td { background: var(--bg2); color: var(--ink); font-weight: 600; border-top: 2px solid var(--border); }
+
+/* STEP */
+.step {
+  display: flex; gap: 1rem; margin: 0.9rem 0; align-items: flex-start;
+}
+.step-num {
+  min-width: 30px; height: 30px;
+  background: var(--orange);
+  color: white;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.step-num.blue { background: var(--blue); }
+.step-num.green { background: var(--green); }
+.step-num.amber { background: var(--amber); }
+.step-text { font-size: 0.92rem; color: var(--ink2); line-height: 1.75; padding-top: 4px; }
+.step-text code {
+  font-family: 'IBM Plex Mono', monospace;
+  background: var(--bg);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.9em;
+  color: var(--ink);
+}
+
+/* EXAMPLE BLOCK */
+.example-block {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1.6rem;
+}
+.example-header {
+  background: var(--ink);
+  color: var(--bg);
+  padding: 1rem 1.4rem;
+  display: flex; align-items: center; gap: 0.8rem;
+}
+.example-header .ex-type {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--orange);
+  padding: 0.2rem 0.6rem;
+  border-radius: 3px;
+}
+.example-header h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.example-body { padding: 1.6rem; background: var(--card); }
+.result-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--green);
+  padding: 1rem 1.4rem;
+  border-radius: 0 4px 4px 0;
+  margin-top: 1rem;
+}
+.result-box h4 {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.5rem;
+}
+.result-box p {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--ink);
+  line-height: 1.8;
+  margin: 0;
+}
+
+/* EXERCISES ACCORDION */
+.exercise {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  background: var(--card);
+}
+.ex-question {
+  padding: 1.2rem 1.4rem;
+  cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  user-select: none;
+  transition: background 0.2s;
+}
+.ex-question:hover { background: var(--bg); }
+.ex-question h4 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 0.97rem;
+  display: flex; align-items: center; gap: 0.8rem;
+}
+.ex-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.ex-badge.simple { background: rgba(212,83,26,0.12); color: var(--orange); }
+.ex-badge.agrup { background: rgba(26,74,138,0.12); color: var(--blue); }
+.ex-arrow { font-size: 1rem; color: var(--ink3); transition: transform 0.3s; }
+.exercise.open .ex-arrow { transform: rotate(90deg); }
+.ex-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.45s cubic-bezier(0.4,0,0.2,1);
+  border-top: 1px solid transparent;
+}
+.exercise.open .ex-body {
+  max-height: 1200px;
+  border-top-color: var(--border);
+}
+.ex-body-inner { padding: 1.6rem; }
+
+/* BAR CHART */
+.chart-area {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1.4rem;
+  margin-top: 1rem;
+}
+.chart-area h4 {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink3);
+  margin-bottom: 1rem;
+}
+#barCanvas, #histCanvas { width: 100%; max-height: 220px; }
+
+/* CALCULATOR */
+.calc-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2rem;
+  box-shadow: 0 2px 12px var(--shadow);
+}
+.calc-inputs {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1.2rem;
+  margin-bottom: 1.2rem;
+}
+.calc-inputs label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  display: block; margin-bottom: 0.4rem;
+}
+.calc-inputs textarea {
+  width: 100%;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.7rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.95rem;
+  color: var(--ink);
+  resize: vertical;
+  min-height: 70px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.calc-inputs textarea:focus { border-color: var(--orange); }
+.btn-calc {
+  display: block; width: 100%;
+  background: var(--orange);
+  color: white;
+  border: none;
+  padding: 0.85rem;
+  border-radius: 4px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.btn-calc:hover { background: var(--orange2); transform: translateY(-1px); }
+.calc-output {
+  margin-top: 1.2rem;
+  display: none;
+  animation: appear 0.3s ease;
+}
+.calc-output.show { display: block; }
+.stat-result {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 0.8rem;
+  margin-top: 0.8rem;
+}
+.stat-pill {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.9rem;
+  text-align: center;
+}
+.stat-pill .sp-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 0.3rem;
+}
+.stat-pill .sp-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--orange);
+}
+
+/* SECTION DIVIDER */
+.sec-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin: 2rem 0 1rem;
+  display: flex; align-items: center; gap: 0.8rem;
+}
+.sec-label::after {
+  content: '';
+  flex: 1; height: 1px;
+  background: var(--border);
+}
+
+/* PILL TAGS */
+.tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+.tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 100px;
+  border: 1px solid;
+}
+.tag.or { border-color: var(--orange); color: var(--orange); }
+.tag.bl { border-color: var(--blue); color: var(--blue); }
+.tag.gr { border-color: var(--green); color: var(--green); }
+.tag.am { border-color: var(--amber); color: var(--amber); }
+
+/* INTRO BANNER */
+.intro-banner {
+  background: var(--ink);
+  color: var(--bg);
+  border-radius: 4px;
+  padding: 2rem;
+  margin-bottom: 1.6rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.5rem;
+  align-items: center;
+}
+.intro-banner h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.intro-banner h2 span { color: var(--orange2); }
+.intro-banner p { color: rgba(247,243,238,0.65); font-size: 0.9rem; margin-top: 0.6rem; line-height: 1.6; }
+.big-stat {
+  text-align: center;
+}
+.big-stat .num {
+  font-family: 'Syne', sans-serif;
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--orange2);
+  line-height: 1;
+}
+.big-stat .lbl {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(247,243,238,0.4);
+  margin-top: 0.3rem;
+}
+@media (max-width: 600px) {
+  .intro-banner { grid-template-columns: 1fr; }
+  .header-inner { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <div class="header-tag">Matemáticas · Estadística Descriptiva</div>
+      <h1>Estadística<br><span>Descriptiva</span></h1>
+      <p class="header-sub">Datos simples &amp; datos agrupados · Guía interactiva completa</p>
+    </div>
+    <div class="header-bars" aria-hidden="true">
+      <span style="height:20px;animation-delay:.1s"></span>
+      <span style="height:45px;animation-delay:.2s"></span>
+      <span style="height:30px;animation-delay:.3s"></span>
+      <span style="height:55px;animation-delay:.4s"></span>
+      <span style="height:38px;animation-delay:.5s"></span>
+      <span style="height:50px;animation-delay:.6s"></span>
+      <span style="height:25px;animation-delay:.7s"></span>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-inner">
+    <button class="nav-btn active" onclick="showTab('intro')">① Introducción</button>
+    <button class="nav-btn" onclick="showTab('simples')">② Datos Simples</button>
+    <button class="nav-btn" onclick="showTab('agrupados')">③ Datos Agrupados</button>
+    <button class="nav-btn" onclick="showTab('ejemplos')">④ Ejemplos</button>
+    <button class="nav-btn" onclick="showTab('calc')">⑤ Calculadora</button>
+    <button class="nav-btn" onclick="showTab('ejercicios')">⑥ Ejercicios</button>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ══════════════════════════════════════════════════════ INTRO -->
+<div class="tab active" id="tab-intro">
+
+  <div class="intro-banner">
+    <div>
+      <h2>¿Qué estudia la<br><span>Estadística?</span></h2>
+      <p>La estadística descriptiva organiza, resume y presenta datos de manera que podamos entender su comportamiento mediante medidas numéricas y gráficas. Se aplica en ciencias, economía, medicina, ingeniería y más.</p>
+    </div>
+    <div class="big-stat">
+      <div class="num">2</div>
+      <div class="lbl">tipos de<br>datos</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>📊 Datos Simples (No Agrupados)</h2>
+      <p>Se trabajan directamente los valores individuales de un conjunto. Se utilizan cuando el número de datos es <span class="hl">pequeño o moderado</span>.</p>
+      <div class="tags">
+        <span class="tag or">Media</span><span class="tag or">Mediana</span>
+        <span class="tag or">Moda</span><span class="tag or">Varianza</span>
+        <span class="tag or">Desv. Estándar</span>
+      </div>
+    </div>
+    <div class="card blue">
+      <h2>📦 Datos Agrupados</h2>
+      <p>Los datos se organizan en <span class="hl-blue">intervalos de clase</span> o frecuencias. Necesario cuando hay muchos datos o un amplio rango de valores.</p>
+      <div class="tags">
+        <span class="tag bl">Intervalos</span><span class="tag bl">Marca de clase</span>
+        <span class="tag bl">Frec. absoluta</span><span class="tag bl">Frec. relativa</span>
+        <span class="tag bl">Frec. acumulada</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-label">Medidas estadísticas</div>
+  <div class="grid-3">
+    <div class="concept">
+      <h3 style="color:var(--orange)">📐 Tendencia Central</h3>
+      <p>Describen el valor "central" o representativo del conjunto de datos.</p>
+      <div class="formula" style="font-size:0.78rem">Media · Mediana · Moda</div>
+    </div>
+    <div class="concept">
+      <h3 style="color:var(--blue)">📏 Dispersión</h3>
+      <p>Miden qué tan dispersos o concentrados están los datos alrededor de la media.</p>
+      <div class="formula" style="font-size:0.78rem">Varianza · Desv. Estándar · Rango</div>
+    </div>
+    <div class="concept">
+      <h3 style="color:var(--green)">📍 Posición</h3>
+      <p>Indican la ubicación relativa de un valor dentro del conjunto de datos.</p>
+      <div class="formula" style="font-size:0.78rem">Cuartiles · Percentiles · Deciles</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1.4rem">
+    <h2>🔢 Simbología esencial</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Símbolo</th><th>Significado</th><th>Fórmula clave</th></tr></thead>
+        <tbody>
+          <tr><td>n</td><td>Número total de datos</td><td>—</td></tr>
+          <tr><td>x̄</td><td>Media aritmética</td><td>Σxᵢ / n</td></tr>
+          <tr><td>Md</td><td>Mediana</td><td>Valor central ordenado</td></tr>
+          <tr><td>Mo</td><td>Moda</td><td>Valor más frecuente</td></tr>
+          <tr><td>σ²</td><td>Varianza poblacional</td><td>Σ(xᵢ−x̄)² / n</td></tr>
+          <tr><td>σ</td><td>Desviación estándar</td><td>√σ²</td></tr>
+          <tr><td>fi</td><td>Frecuencia absoluta</td><td>Conteo de cada valor</td></tr>
+          <tr><td>hi</td><td>Frecuencia relativa</td><td>fi / n</td></tr>
+          <tr><td>Fi</td><td>Frec. acumulada</td><td>Σfi hasta ese intervalo</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ DATOS SIMPLES -->
+<div class="tab" id="tab-simples">
+
+  <div class="card">
+    <h2>📊 Medidas para Datos Simples</h2>
+    <p>Cuando los datos están <span class="hl">sin agrupar</span>, se aplican directamente las fórmulas sobre el conjunto {x₁, x₂, …, xₙ}.</p>
+  </div>
+
+  <div class="sec-label">Medidas de Tendencia Central</div>
+  <div class="grid-2">
+    <div class="concept">
+      <h3 style="color:var(--orange)">Media Aritmética (x̄)</h3>
+      <p>Suma de todos los valores dividida entre el número total de datos. Es la medida más utilizada pero sensible a valores extremos.</p>
+      <div class="formula">x̄ = (Σ xᵢ) / n<br>x̄ = (x₁+x₂+⋯+xₙ) / n</div>
+    </div>
+    <div class="concept">
+      <h3 style="color:var(--orange)">Mediana (Md)</h3>
+      <p>Valor que ocupa el lugar central al ordenar los datos. No se ve afectada por valores extremos.</p>
+      <div class="formula">
+        n impar → posición (n+1)/2<br>
+        n par  → prom. de n/2 y n/2+1
+      </div>
+    </div>
+    <div class="concept">
+      <h3 style="color:var(--orange)">Moda (Mo)</h3>
+      <p>El valor que aparece con mayor frecuencia. Puede haber más de una moda (bimodal, multimodal) o no existir.</p>
+      <div class="formula">Mo = valor con mayor fi</div>
+    </div>
+    <div class="concept">
+      <h3 style="color:var(--orange)">Media Ponderada</h3>
+      <p>Cuando cada dato tiene una importancia (peso) diferente. Muy usada en calificaciones con distintos créditos.</p>
+      <div class="formula">x̄ₚ = (Σ wᵢ·xᵢ) / (Σ wᵢ)</div>
+    </div>
+  </div>
+
+  <div class="sec-label">Medidas de Dispersión</div>
+  <div class="grid-2">
+    <div class="concept">
+      <h3 style="color:var(--blue)">Rango (R)</h3>
+      <p>Diferencia entre el valor máximo y mínimo. Medida simple pero muy sensible a datos atípicos.</p>
+      <div class="formula blue">R = x_máx − x_mín</div>
+    </div>
+    <div class="concept">
+      <h3 style="color:var(--blue)">Varianza (σ²)</h3>
+      <p>Promedio de los cuadrados de las desviaciones respecto a la media. Siempre es ≥ 0.</p>
+      <div class="formula blue">σ² = Σ(xᵢ − x̄)² / n<br>s² = Σ(xᵢ − x̄)² / (n−1)  ← muestral</div>
+    </div>
+    <div class="concept">
+      <h3 style="color:var(--blue)">Desviación Estándar (σ)</h3>
+      <p>Raíz cuadrada de la varianza. Tiene las mismas unidades que los datos originales.</p>
+      <div class="formula blue">σ = √[Σ(xᵢ − x̄)² / n]</div>
+    </div>
+    <div class="concept">
+      <h3 style="color:var(--blue)">Coef. de Variación (CV)</h3>
+      <p>Mide la dispersión relativa. Permite comparar variabilidades de diferentes conjuntos.</p>
+      <div class="formula blue">CV = (σ / x̄) × 100%</div>
+    </div>
+  </div>
+
+  <div class="sec-label">Tabla de distribución de frecuencias (datos simples)</div>
+  <div class="card">
+    <h2>📋 Estructura de la tabla</h2>
+    <p>Para datos simples se construye una tabla con cada valor único, su frecuencia y los acumulados:</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>xᵢ</th><th>fi (abs.)</th><th>hi (rel.)</th><th>hi% (%)</th><th>Fi (ac.)</th><th>Hi (ac.%)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2</td><td>3</td><td>0.150</td><td>15.0%</td><td>3</td><td>15.0%</td></tr>
+          <tr><td>4</td><td>5</td><td>0.250</td><td>25.0%</td><td>8</td><td>40.0%</td></tr>
+          <tr><td>6</td><td>7</td><td>0.350</td><td>35.0%</td><td>15</td><td>75.0%</td></tr>
+          <tr><td>8</td><td>4</td><td>0.200</td><td>20.0%</td><td>19</td><td>95.0%</td></tr>
+          <tr><td>10</td><td>1</td><td>0.050</td><td>5.0%</td><td>20</td><td>100.0%</td></tr>
+          <tr><td><strong>Total</strong></td><td><strong>20</strong></td><td><strong>1.000</strong></td><td><strong>100%</strong></td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="chart-area">
+      <h4>📊 Gráfico de barras — Frecuencia absoluta</h4>
+      <canvas id="barCanvas" height="200"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ DATOS AGRUPADOS -->
+<div class="tab" id="tab-agrupados">
+
+  <div class="card blue">
+    <h2>📦 Datos Agrupados en Intervalos</h2>
+    <p>Cuando los datos son <span class="hl-blue">numerosos o de gran rango</span>, se agrupan en clases. Perdemos algo de precisión pero ganamos síntesis y claridad.</p>
+  </div>
+
+  <div class="sec-label">Construcción de la tabla de frecuencias</div>
+  <div class="grid-2">
+    <div class="concept">
+      <h3 style="color:var(--blue)">Número de clases (k)</h3>
+      <p>Se determina con la Regla de Sturges o raíz cuadrada de n.</p>
+      <div class="formula blue">k ≈ 1 + 3.322 · log₁₀(n)<br>k ≈ √n  (aprox. alternativa)</div>
+    </div>
+    <div class="concept">
+      <h3 style="color:var(--blue)">Amplitud del intervalo (c)</h3>
+      <p>El rango total dividido entre el número de clases. Se redondea hacia arriba.</p>
+      <div class="formula blue">c = (x_máx − x_mín) / k</div>
+    </div>
+    <div class="concept">
+      <h3 style="color:var(--blue)">Marca de clase (mᵢ)</h3>
+      <p>Punto medio del intervalo. Representa a todos los datos de esa clase.</p>
+      <div class="formula blue">mᵢ = (L_inf + L_sup) / 2</div>
+    </div>
+    <div class="concept">
+      <h3 style="color:var(--blue)">Frecuencia relativa (hᵢ)</h3>
+      <p>Proporción que representa cada clase respecto al total de datos.</p>
+      <div class="formula blue">hᵢ = fᵢ / n</div>
+    </div>
+  </div>
+
+  <div class="sec-label">Fórmulas para datos agrupados</div>
+  <div class="card blue">
+    <h2>📐 Media, Mediana y Moda</h2>
+    <div class="grid-3" style="gap:1rem">
+      <div>
+        <p style="font-weight:600;color:var(--blue);margin-bottom:0.5rem">Media</p>
+        <div class="formula blue">x̄ = Σ(mᵢ · fᵢ) / n</div>
+        <p style="font-size:0.84rem;color:var(--ink3);margin-top:0.5rem">Donde mᵢ es la marca de clase y fᵢ la frecuencia absoluta.</p>
+      </div>
+      <div>
+        <p style="font-weight:600;color:var(--blue);margin-bottom:0.5rem">Mediana</p>
+        <div class="formula blue">Md = L + [(n/2 − F_ant) / f_md] · c</div>
+        <p style="font-size:0.84rem;color:var(--ink3);margin-top:0.5rem">L = límite inferior, F_ant = frec. acum. anterior, f_md = frec. clase mediana, c = amplitud.</p>
+      </div>
+      <div>
+        <p style="font-weight:600;color:var(--blue);margin-bottom:0.5rem">Moda</p>
+        <div class="formula blue">Mo = L + [d₁/(d₁+d₂)] · c</div>
+        <p style="font-size:0.84rem;color:var(--ink3);margin-top:0.5rem">d₁ = dif. con clase anterior, d₂ = dif. con clase siguiente.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card blue">
+    <h2>📐 Varianza y Desviación Estándar</h2>
+    <div class="formula blue">σ² = Σ fᵢ(mᵢ − x̄)² / n</div>
+    <div class="formula blue">σ = √[ Σ fᵢ(mᵢ − x̄)² / n ]</div>
+    <p>También puede calcularse con la fórmula abreviada: <code style="font-family:'IBM Plex Mono',monospace; background:var(--bg2); padding:0.2rem 0.5rem; border-radius:3px">σ² = (Σfᵢmᵢ²/n) − x̄²</code></p>
+  </div>
+
+  <div class="sec-label">Estructura completa de tabla agrupada</div>
+  <div class="card">
+    <h2>📋 Tabla de frecuencias — Ejemplo base</h2>
+    <p>Notas de 30 estudiantes agrupadas en intervalos de amplitud 10:</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Intervalo</th><th>mᵢ</th><th>fᵢ</th><th>hᵢ</th><th>Fᵢ</th><th>fᵢ·mᵢ</th><th>fᵢ·mᵢ²</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>[40 − 50)</td><td>45</td><td>3</td><td>0.100</td><td>3</td><td>135</td><td>6 075</td></tr>
+          <tr><td>[50 − 60)</td><td>55</td><td>7</td><td>0.233</td><td>10</td><td>385</td><td>21 175</td></tr>
+          <tr><td>[60 − 70)</td><td>65</td><td>10</td><td>0.333</td><td>20</td><td>650</td><td>42 250</td></tr>
+          <tr><td>[70 − 80)</td><td>75</td><td>6</td><td>0.200</td><td>26</td><td>450</td><td>33 750</td></tr>
+          <tr><td>[80 − 90)</td><td>85</td><td>4</td><td>0.133</td><td>30</td><td>340</td><td>28 900</td></tr>
+          <tr><td>Total</td><td>—</td><td>30</td><td>1.000</td><td>—</td><td>1 960</td><td>132 150</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="result-box" style="margin-top:1.2rem">
+      <h4>Resultados rápidos</h4>
+      <p>x̄ = 1960/30 ≈ 65.33 &nbsp;|&nbsp; σ² = 132150/30 − 65.33² ≈ 132.06 &nbsp;|&nbsp; σ ≈ 11.49</p>
+    </div>
+    <div class="chart-area">
+      <h4>📊 Histograma de frecuencias absolutas</h4>
+      <canvas id="histCanvas" height="200"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ EJEMPLOS -->
+<div class="tab" id="tab-ejemplos">
+
+  <!-- EJEMPLO 1 DATOS SIMPLES -->
+  <div class="example-block">
+    <div class="example-header">
+      <span class="ex-type">Datos Simples</span>
+      <h3>Ejemplo 1 — Media, Mediana y Moda</h3>
+    </div>
+    <div class="example-body">
+      <p style="color:var(--ink2);margin-bottom:1rem">Las edades de 10 empleados son: <strong>25, 30, 28, 35, 30, 22, 28, 30, 40, 27</strong></p>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Ordenar los datos de menor a mayor:<br>
+          <code>22, 25, 27, 28, 28, 30, 30, 30, 35, 40</code>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Media:</strong><br>
+          <code>x̄ = (22+25+27+28+28+30+30+30+35+40) / 10 = 295 / 10 = 29.5</code>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>Mediana</strong> (n=10, par → promedio de posiciones 5 y 6):<br>
+          <code>Md = (28 + 30) / 2 = 58 / 2 = 29</code>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text"><strong>Moda</strong> (el valor que más se repite):<br>
+          <code>Mo = 30 (aparece 3 veces)</code>
+        </div>
+      </div>
+      <div class="result-box">
+        <h4>✔ Resultados</h4>
+        <p>x̄ = 29.5 años &nbsp;|&nbsp; Md = 29 años &nbsp;|&nbsp; Mo = 30 años</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- EJEMPLO 2 DATOS SIMPLES -->
+  <div class="example-block">
+    <div class="example-header">
+      <span class="ex-type" style="background:var(--blue2)">Datos Simples</span>
+      <h3>Ejemplo 2 — Varianza y Desviación Estándar</h3>
+    </div>
+    <div class="example-body">
+      <p style="color:var(--ink2);margin-bottom:1rem">Con el conjunto: <strong>4, 7, 13, 2, 1, 9</strong> &nbsp;(n = 6)</p>
+      <div class="step"><div class="step-num blue">1</div><div class="step-text">Media: <code>x̄ = (4+7+13+2+1+9)/6 = 36/6 = 6</code></div></div>
+      <div class="step"><div class="step-num blue">2</div><div class="step-text">Calcular cada (xᵢ − x̄)²:<br>
+        <code>(4−6)²=4 · (7−6)²=1 · (13−6)²=49<br>(2−6)²=16 · (1−6)²=25 · (9−6)²=9</code>
+      </div></div>
+      <div class="step"><div class="step-num blue">3</div><div class="step-text">Suma: <code>Σ(xᵢ−x̄)² = 4+1+49+16+25+9 = 104</code></div></div>
+      <div class="step"><div class="step-num blue">4</div><div class="step-text">Varianza: <code>σ² = 104 / 6 ≈ 17.33</code></div></div>
+      <div class="step"><div class="step-num blue">5</div><div class="step-text">Desviación estándar: <code>σ = √17.33 ≈ 4.16</code></div></div>
+      <div class="step"><div class="step-num blue">6</div><div class="step-text">Coef. de variación: <code>CV = (4.16/6)×100 ≈ 69.3%</code> → Alta dispersión</div></div>
+      <div class="result-box">
+        <h4>✔ Resultados</h4>
+        <p>x̄ = 6 &nbsp;|&nbsp; σ² ≈ 17.33 &nbsp;|&nbsp; σ ≈ 4.16 &nbsp;|&nbsp; CV ≈ 69.3%</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- EJEMPLO 3 DATOS AGRUPADOS -->
+  <div class="example-block">
+    <div class="example-header" style="background:var(--blue)">
+      <span class="ex-type" style="background:var(--amber)">Datos Agrupados</span>
+      <h3>Ejemplo 3 — Media, Mediana y Moda agrupados</h3>
+    </div>
+    <div class="example-body">
+      <p style="color:var(--ink2);margin-bottom:1rem">Pesos (kg) de 40 personas organizados en la siguiente tabla:</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Intervalo</th><th>mᵢ</th><th>fᵢ</th><th>Fᵢ</th><th>fᵢ·mᵢ</th></tr></thead>
+          <tbody>
+            <tr><td>[50 − 60)</td><td>55</td><td>5</td><td>5</td><td>275</td></tr>
+            <tr><td>[60 − 70)</td><td>65</td><td>12</td><td>17</td><td>780</td></tr>
+            <tr><td>[70 − 80)</td><td>75</td><td>15</td><td>32</td><td>1125</td></tr>
+            <tr><td>[80 − 90)</td><td>85</td><td>6</td><td>38</td><td>510</td></tr>
+            <tr><td>[90 − 100)</td><td>95</td><td>2</td><td>40</td><td>190</td></tr>
+            <tr><td>Total</td><td>—</td><td>40</td><td>—</td><td>2880</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="step"><div class="step-num amber">1</div><div class="step-text"><strong>Media:</strong> <code>x̄ = 2880/40 = 72 kg</code></div></div>
+      <div class="step"><div class="step-num amber">2</div>
+        <div class="step-text"><strong>Mediana</strong> — n/2 = 20 → clase mediana: [70−80) (Fᵢ=32 ≥ 20, F_ant=17)<br>
+          <code>Md = 70 + [(20−17)/15] × 10 = 70 + 2 = 72 kg</code>
+        </div>
+      </div>
+      <div class="step"><div class="step-num amber">3</div>
+        <div class="step-text"><strong>Moda</strong> — Clase modal: [70−80) (f=15, mayor)<br>
+          <code>d₁ = 15−12 = 3 &nbsp; d₂ = 15−6 = 9<br>Mo = 70 + [3/(3+9)] × 10 = 70 + 2.5 = 72.5 kg</code>
+        </div>
+      </div>
+      <div class="result-box">
+        <h4>✔ Resultados</h4>
+        <p>x̄ = 72 kg &nbsp;|&nbsp; Md = 72 kg &nbsp;|&nbsp; Mo ≈ 72.5 kg → Distribución casi simétrica</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- EJEMPLO 4 VARIANZA AGRUPADA -->
+  <div class="example-block">
+    <div class="example-header" style="background:var(--blue)">
+      <span class="ex-type" style="background:var(--green2)">Datos Agrupados</span>
+      <h3>Ejemplo 4 — Varianza y Desviación Estándar agrupados</h3>
+    </div>
+    <div class="example-body">
+      <p style="color:var(--ink2);margin-bottom:1rem">Con los datos del Ejemplo 3 (x̄ = 72):</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>mᵢ</th><th>fᵢ</th><th>mᵢ−x̄</th><th>(mᵢ−x̄)²</th><th>fᵢ(mᵢ−x̄)²</th></tr></thead>
+          <tbody>
+            <tr><td>55</td><td>5</td><td>−17</td><td>289</td><td>1445</td></tr>
+            <tr><td>65</td><td>12</td><td>−7</td><td>49</td><td>588</td></tr>
+            <tr><td>75</td><td>15</td><td>3</td><td>9</td><td>135</td></tr>
+            <tr><td>85</td><td>6</td><td>13</td><td>169</td><td>1014</td></tr>
+            <tr><td>95</td><td>2</td><td>23</td><td>529</td><td>1058</td></tr>
+            <tr><td>—</td><td>40</td><td>—</td><td>—</td><td>4240</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="step"><div class="step-num green">1</div><div class="step-text">Varianza: <code>σ² = 4240/40 = 106</code></div></div>
+      <div class="step"><div class="step-num green">2</div><div class="step-text">Desviación estándar: <code>σ = √106 ≈ 10.3 kg</code></div></div>
+      <div class="step"><div class="step-num green">3</div><div class="step-text">CV: <code>(10.3/72)×100 ≈ 14.3%</code> → Baja dispersión relativa</div></div>
+      <div class="result-box">
+        <h4>✔ Resultados</h4>
+        <p>σ² = 106 kg² &nbsp;|&nbsp; σ ≈ 10.3 kg &nbsp;|&nbsp; CV ≈ 14.3%</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ CALCULADORA -->
+<div class="tab" id="tab-calc">
+  <div class="calc-card">
+    <h2 style="font-family:'Syne',sans-serif;font-weight:800;margin-bottom:0.5rem">🧮 Calculadora de Estadística</h2>
+    <p style="color:var(--ink3);margin-bottom:1.4rem;font-size:0.9rem">Ingresa datos simples separados por comas y obtén todas las medidas automáticamente.</p>
+
+    <div class="calc-inputs">
+      <label>Datos (separados por coma)</label>
+      <textarea id="dataInput" placeholder="Ej: 12, 15, 18, 20, 14, 16, 22, 19, 13, 17"></textarea>
+    </div>
+    <button class="btn-calc" onclick="calcStats()">▶ Calcular Estadísticas</button>
+    <div class="calc-output" id="calcOutput">
+      <div class="stat-result" id="statResult"></div>
+      <div id="calcDetail" style="margin-top:1.2rem"></div>
+    </div>
+  </div>
+
+  <div class="calc-card" style="margin-top:1.4rem">
+    <h2 style="font-family:'Syne',sans-serif;font-weight:800;margin-bottom:0.5rem">🗃 Ejemplos rápidos</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:0.7rem;margin-top:0.5rem">
+      <button class="btn-calc" style="width:auto;padding:0.5rem 1rem;background:var(--ink)"
+        onclick="loadSample('4,7,13,2,1,9')">Conjunto básico</button>
+      <button class="btn-calc" style="width:auto;padding:0.5rem 1rem;background:var(--blue)"
+        onclick="loadSample('22,25,27,28,28,30,30,30,35,40')">Edades empleados</button>
+      <button class="btn-calc" style="width:auto;padding:0.5rem 1rem;background:var(--green)"
+        onclick="loadSample('60,75,82,90,55,68,77,85,91,70,63,88')">Notas de clase</button>
+      <button class="btn-calc" style="width:auto;padding:0.5rem 1rem;background:var(--amber)"
+        onclick="loadSample('100,150,200,250,300,180,220,160,190,210')">Ventas semanales</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ EJERCICIOS -->
+<div class="tab" id="tab-ejercicios">
+  <div class="card" style="margin-bottom:1.4rem">
+    <h2>📝 Ejercicios con solución paso a paso</h2>
+    <p>Haz clic en cada ejercicio para revelar el procedimiento completo. ¡Intenta resolverlos tú primero!</p>
+  </div>
+
+  <div id="exerciseContainer"></div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+// ─── TAB SYSTEM ────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (id==='simples' && !window.barDrawn) drawBar();
+  if (id==='agrupados' && !window.histDrawn) drawHist();
+}
+
+// ─── BAR CHART (Datos Simples) ──────────────────────────────────
+function drawBar() {
+  const canvas = document.getElementById('barCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.parentElement.offsetWidth - 40;
+  canvas.height = 200;
+  const data = [{x:'2',f:3},{x:'4',f:5},{x:'6',f:7},{x:'8',f:4},{x:'10',f:1}];
+  const W = canvas.width, H = canvas.height;
+  const pad = {l:40,r:20,t:20,b:40};
+  const maxF = 8;
+  const bw = (W - pad.l - pad.r) / data.length * 0.7;
+  const gap = (W - pad.l - pad.r) / data.length;
+  ctx.clearRect(0,0,W,H);
+  // axes
+  ctx.strokeStyle='#c8bfb0'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,H-pad.b); ctx.lineTo(W-pad.r,H-pad.b); ctx.stroke();
+  // bars
+  data.forEach((d,i) => {
+    const x = pad.l + i*gap + gap/2 - bw/2;
+    const barH = ((d.f/maxF)*(H-pad.t-pad.b));
+    const y = H - pad.b - barH;
+    ctx.fillStyle = '#d4531a';
+    ctx.fillRect(x, y, bw, barH);
+    ctx.fillStyle = '#1a1207';
+    ctx.font = '11px IBM Plex Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText(d.x, x+bw/2, H-pad.b+14);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(d.f, x+bw/2, y+14);
+  });
+  window.barDrawn = true;
+}
+
+// ─── HISTOGRAM (Datos Agrupados) ────────────────────────────────
+function drawHist() {
+  const canvas = document.getElementById('histCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.parentElement.offsetWidth - 40;
+  canvas.height = 200;
+  const data = [{l:'40-50',f:3},{l:'50-60',f:7},{l:'60-70',f:10},{l:'70-80',f:6},{l:'80-90',f:4}];
+  const W = canvas.width, H = canvas.height;
+  const pad = {l:40,r:20,t:20,b:40};
+  const maxF = 10;
+  const n = data.length;
+  const bw = (W - pad.l - pad.r) / n;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#c8bfb0'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,H-pad.b); ctx.lineTo(W-pad.r,H-pad.b); ctx.stroke();
+  data.forEach((d,i) => {
+    const x = pad.l + i*bw;
+    const barH = (d.f/maxF)*(H-pad.t-pad.b);
+    const y = H-pad.b-barH;
+    const colors = ['#1a4a8a','#2d6abf','#1a6644','#c4860a','#d4531a'];
+    ctx.fillStyle = colors[i];
+    ctx.fillRect(x+1, y, bw-2, barH);
+    ctx.fillStyle = '#1a1207';
+    ctx.font = '10px IBM Plex Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText(d.l, x+bw/2, H-pad.b+14);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(d.f, x+bw/2, y+14);
+  });
+  window.histDrawn = true;
+}
+
+// ─── CALCULATOR ────────────────────────────────────────────────
+function loadSample(s) {
+  document.getElementById('dataInput').value = s;
+  calcStats();
+}
+
+function calcStats() {
+  const raw = document.getElementById('dataInput').value;
+  const nums = raw.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+  if (nums.length < 2) { alert('Ingresa al menos 2 números separados por coma.'); return; }
+  
+  const n = nums.length;
+  const sorted = [...nums].sort((a,b)=>a-b);
+  const sum = nums.reduce((a,b)=>a+b,0);
+  const mean = sum/n;
+  
+  // Median
+  let median;
+  if (n%2===1) median = sorted[Math.floor(n/2)];
+  else median = (sorted[n/2-1]+sorted[n/2])/2;
+  
+  // Mode
+  const freq = {};
+  nums.forEach(x => freq[x] = (freq[x]||0)+1);
+  const maxF = Math.max(...Object.values(freq));
+  const modes = Object.entries(freq).filter(([,f])=>f===maxF).map(([v])=>parseFloat(v));
+  const modeStr = maxF===1 ? 'Sin moda' : modes.join(', ');
+  
+  // Variance & std
+  const variance = nums.reduce((a,x)=>a+(x-mean)**2,0)/n;
+  const std = Math.sqrt(variance);
+  const cv = (std/mean)*100;
+  const range = sorted[n-1]-sorted[0];
+  const sampleVar = nums.reduce((a,x)=>a+(x-mean)**2,0)/(n-1);
+  const sampleStd = Math.sqrt(sampleVar);
+  
+  const R = v => Math.round(v*1000)/1000;
+
+  const pills = [
+    {l:'n (datos)', v: n},
+    {l:'Media (x̄)', v: R(mean)},
+    {l:'Mediana', v: R(median)},
+    {l:'Moda', v: modeStr},
+    {l:'Mín', v: sorted[0]},
+    {l:'Máx', v: sorted[n-1]},
+    {l:'Rango', v: R(range)},
+    {l:'Varianza (σ²)', v: R(variance)},
+    {l:'Desv. Est. (σ)', v: R(std)},
+    {l:'Desv. muestral (s)', v: R(sampleStd)},
+    {l:'CV (%)', v: R(cv)+'%'},
+    {l:'Suma (Σx)', v: R(sum)},
+  ];
+
+  document.getElementById('statResult').innerHTML = pills.map(p=>`
+    <div class="stat-pill">
+      <div class="sp-label">${p.l}</div>
+      <div class="sp-value">${p.v}</div>
+    </div>`).join('');
+
+  // Detail table
+  let detail = `<div class="tbl-wrap"><table>
+    <thead><tr><th>xᵢ</th><th>xᵢ−x̄</th><th>(xᵢ−x̄)²</th></tr></thead><tbody>`;
+  nums.forEach(x=>{
+    const d = x-mean;
+    detail+=`<tr><td>${x}</td><td>${R(d)}</td><td>${R(d*d)}</td></tr>`;
+  });
+  detail+=`<tr><td>Σ = ${R(sum)}</td><td>0</td><td>${R(variance*n)}</td></tr></tbody></table></div>`;
+  document.getElementById('calcDetail').innerHTML = detail;
+  document.getElementById('calcOutput').classList.add('show');
+}
+
+// ─── EXERCISES ─────────────────────────────────────────────────
+const exercises = [
+  {
+    type:'simple', badge:'Datos Simples',
+    q:'Las calificaciones de 8 estudiantes son: 65, 70, 80, 75, 90, 70, 85, 60. Calcula media, mediana, moda y desviación estándar.',
+    steps:[
+      {n:'1', t:'Ordenar', c:'60, 65, 70, 70, 75, 80, 85, 90'},
+      {n:'2', t:'Media', c:'x̄ = (60+65+70+70+75+80+85+90)/8 = 595/8 = 74.375'},
+      {n:'3', t:'Mediana (n=8, par)', c:'Md = (70+75)/2 = 72.5'},
+      {n:'4', t:'Moda', c:'Mo = 70 (aparece 2 veces)'},
+      {n:'5', t:'Desviaciones²', c:'(60−74.375)²=206.64 · (65−74.375)²=87.89 · (70−74.375)²=19.14 (×2) · (75−74.375)²=0.39 · (80−74.375)²=31.64 · (85−74.375)²=112.89 · (90−74.375)²=244.14'},
+      {n:'6', t:'Varianza', c:'σ² = (206.64+87.89+19.14+19.14+0.39+31.64+112.89+244.14)/8 = 721.87/8 ≈ 90.23'},
+      {n:'7', t:'Desv. Estándar', c:'σ = √90.23 ≈ 9.50'},
+    ],
+    res:'x̄ = 74.375 | Md = 72.5 | Mo = 70 | σ ≈ 9.50'
+  },
+  {
+    type:'simple', badge:'Datos Simples',
+    q:'Un vendedor registró las siguientes ventas diarias (en miles): 12, 15, 11, 18, 14, 16, 13, 17, 10, 14. Encuentra el coeficiente de variación.',
+    steps:[
+      {n:'1', t:'Suma y Media', c:'Σ = 140 → x̄ = 140/10 = 14'},
+      {n:'2', t:'Desviaciones al cuadrado', c:'(12−14)²=4 · (15−14)²=1 · (11−14)²=9 · (18−14)²=16 · (14−14)²=0 · (16−14)²=4 · (13−14)²=1 · (17−14)²=9 · (10−14)²=16 · (14−14)²=0'},
+      {n:'3', t:'Varianza', c:'σ² = (4+1+9+16+0+4+1+9+16+0)/10 = 60/10 = 6'},
+      {n:'4', t:'Desviación Estándar', c:'σ = √6 ≈ 2.449'},
+      {n:'5', t:'Coef. de Variación', c:'CV = (2.449/14)×100 ≈ 17.5% → Dispersión baja-moderada'},
+    ],
+    res:'x̄ = 14 | σ ≈ 2.449 | CV ≈ 17.5%'
+  },
+  {
+    type:'agrup', badge:'Datos Agrupados',
+    q:'Las horas semanales de estudio de 50 alumnos están distribuidas así: [0-5): f=4, [5-10): f=12, [10-15): f=18, [15-20): f=11, [20-25): f=5. Calcula media y mediana.',
+    steps:[
+      {n:'1', t:'Marcas de clase', c:'m₁=2.5 · m₂=7.5 · m₃=12.5 · m₄=17.5 · m₅=22.5'},
+      {n:'2', t:'fᵢ·mᵢ', c:'4×2.5=10 · 12×7.5=90 · 18×12.5=225 · 11×17.5=192.5 · 5×22.5=112.5'},
+      {n:'3', t:'Media', c:'x̄ = (10+90+225+192.5+112.5)/50 = 630/50 = 12.6 horas'},
+      {n:'4', t:'Frecuencias acumuladas', c:'F₁=4, F₂=16, F₃=34, F₄=45, F₅=50'},
+      {n:'5', t:'Clase mediana (n/2=25)', c:'F₂=16 < 25 ≤ F₃=34 → Clase [10−15)'},
+      {n:'6', t:'Mediana', c:'Md = 10 + [(25−16)/18]×5 = 10 + (9/18)×5 = 10 + 2.5 = 12.5 horas'},
+    ],
+    res:'x̄ = 12.6 horas | Md = 12.5 horas'
+  },
+  {
+    type:'agrup', badge:'Datos Agrupados',
+    q:'Los salarios mensuales (en USD) de 60 trabajadores: [800-1000): f=8, [1000-1200): f=15, [1200-1400): f=22, [1400-1600): f=10, [1600-1800): f=5. Calcula la moda y la desviación estándar.',
+    steps:[
+      {n:'1', t:'Clase modal', c:'Clase [1200−1400) tiene la mayor frecuencia: f=22'},
+      {n:'2', t:'Moda (Czuber)', c:'d₁ = 22−15 = 7 | d₂ = 22−10 = 12\nMo = 1200 + [7/(7+12)]×200 = 1200 + 73.68 ≈ 1273.68 USD'},
+      {n:'3', t:'Marcas y media', c:'m: 900,1100,1300,1500,1700\nx̄ = (7200+16500+28600+15000+8500)/60 = 75800/60 ≈ 1263.33'},
+      {n:'4', t:'fᵢ(mᵢ−x̄)²', c:'8×(900−1263.33)²=8×132,080=1,056,640\n15×(1100−1263.33)²=15×26,672=400,080\n22×(1300−1263.33)²=22×1,344=29,570\n10×(1500−1263.33)²=10×56,014=560,140\n5×(1700−1263.33)²=5×190,680=953,400'},
+      {n:'5', t:'Varianza', c:'σ² = (1,056,640+400,080+29,570+560,140+953,400)/60 = 2,999,830/60 ≈ 49,997'},
+      {n:'6', t:'Desv. Estándar', c:'σ = √49,997 ≈ 223.6 USD'},
+    ],
+    res:'Mo ≈ 1273.68 USD | x̄ ≈ 1263.33 USD | σ ≈ 223.6 USD'
+  },
+  {
+    type:'simple', badge:'Datos Simples',
+    q:'Los tiempos (minutos) de 9 atletas en una carrera: 32, 28, 35, 30, 27, 33, 29, 31, 26. Encuentra el cuartil Q1, Q2 y Q3.',
+    steps:[
+      {n:'1', t:'Ordenar', c:'26, 27, 28, 29, 30, 31, 32, 33, 35'},
+      {n:'2', t:'Mediana Q2 (pos. 5)', c:'Q2 = 30 minutos'},
+      {n:'3', t:'Q1 — mitad inferior (26,27,28,29)', c:'Q1 = (27+28)/2 = 27.5 minutos'},
+      {n:'4', t:'Q3 — mitad superior (31,32,33,35)', c:'Q3 = (32+33)/2 = 32.5 minutos'},
+      {n:'5', t:'Rango intercuartílico', c:'RIC = Q3−Q1 = 32.5−27.5 = 5 minutos'},
+    ],
+    res:'Q1 = 27.5 | Q2 = 30 | Q3 = 32.5 | RIC = 5 minutos'
+  },
+  {
+    type:'agrup', badge:'Datos Agrupados',
+    q:'Construye la tabla de frecuencias completa para los siguientes datos de temperaturas (°C) de 25 días: [15-20): f=3, [20-25): f=8, [25-30): f=9, [30-35): f=4, [35-40): f=1. Calcula media y varianza.',
+    steps:[
+      {n:'1', t:'Tabla completa (mᵢ, hᵢ, Fᵢ)', c:'m: 17.5,22.5,27.5,32.5,37.5\nh: 0.12,0.32,0.36,0.16,0.04\nF: 3,11,20,24,25'},
+      {n:'2', t:'fᵢ·mᵢ', c:'3×17.5=52.5 · 8×22.5=180 · 9×27.5=247.5 · 4×32.5=130 · 1×37.5=37.5 → Σ=647.5'},
+      {n:'3', t:'Media', c:'x̄ = 647.5/25 = 25.9 °C'},
+      {n:'4', t:'fᵢ(mᵢ−x̄)²', c:'3×(17.5−25.9)²=211.68 · 8×(22.5−25.9)²=92.48 · 9×(27.5−25.9)²=23.04 · 4×(32.5−25.9)²=174.24 · 1×(37.5−25.9)²=134.56'},
+      {n:'5', t:'Varianza', c:'σ² = (211.68+92.48+23.04+174.24+134.56)/25 = 636/25 = 25.44'},
+      {n:'6', t:'Desv. Estándar', c:'σ = √25.44 ≈ 5.04 °C'},
+    ],
+    res:'x̄ = 25.9°C | σ² = 25.44 | σ ≈ 5.04°C | CV ≈ 19.5%'
+  }
+];
+
+function buildExercises() {
+  const c = document.getElementById('exerciseContainer');
+  exercises.forEach((ex,i) => {
+    const div = document.createElement('div');
+    div.className = 'exercise';
+    div.innerHTML = `
+      <div class="ex-question" onclick="this.parentElement.classList.toggle('open')">
+        <h4>
+          <span class="ex-badge ${ex.type}">${ex.badge}</span>
+          Ejercicio ${i+1}: ${ex.q}
+        </h4>
+        <span class="ex-arrow">▶</span>
+      </div>
+      <div class="ex-body">
+        <div class="ex-body-inner">
+          ${ex.steps.map(s=>`
+            <div class="step">
+              <div class="step-num ${ex.type==='agrup'?'blue':''}">${s.n}</div>
+              <div class="step-text"><strong>${s.t}:</strong><br><code style="font-family:'IBM Plex Mono',monospace;background:var(--bg);padding:0.3rem 0.6rem;border-radius:3px;display:inline-block;margin-top:0.3rem;font-size:0.88rem;white-space:pre-wrap">${s.c}</code></div>
+            </div>`).join('')}
+          <div class="result-box" style="margin-top:1rem">
+            <h4>✔ Resultado Final</h4>
+            <p>${ex.res}</p>
+          </div>
+        </div>
+      </div>`;
+    c.appendChild(div);
+  });
+}
+buildExercises();
+
+// Draw bar chart on first visit to simples tab
+document.querySelector('[onclick="showTab(\'simples\')"]').addEventListener('click', ()=>{
+  setTimeout(drawBar,100);
+});
+document.querySelector('[onclick="showTab(\'agrupados\')"]').addEventListener('click', ()=>{
+  setTimeout(drawHist,100);
+});
+</script>
+</body>
+</html>
